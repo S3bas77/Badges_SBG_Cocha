@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badge 9:16 — AWS Student Community Day Cochabamba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas-w: 1080px;
+    --canvas-h: 1920px;
+    --navy-950:#03060b;
+    --navy-900:#050a14;
+    --teal-900:#071a1f;
+    --cyan:#35e7ff;
+    --cyan-dim:#1c9db8;
+    --cyan-glow:rgba(53,231,255,.5);
+    --orange:#ff9900;
+    --white:#ffffff;
+    --grey-200:#c8d3e3;
+    --grey-400:#8b97ac;
+    --mint:#6ff2c8;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:#17181c; min-height:100vh; font-family:'Poppins',sans-serif; }
+
+  /* ============ page chrome ============ */
+  .page{ display:flex; flex-direction:column; align-items:center; gap:18px; padding:28px 16px 60px; }
+  .controls{
+    width:100%; max-width:var(--canvas-w);
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    background:#1f2129; border:1px solid #303342; border-radius:10px;
+    padding:14px 18px; color:#d7dbe6; font-size:14px;
+  }
+  .controls .format-label{ font-weight:600; letter-spacing:.3px; }
+  .controls .role-control{ display:flex; align-items:center; gap:10px; }
+  .controls select{
+    background:#101218; color:#fff; border:1px solid #3a3d4d; border-radius:6px;
+    padding:8px 12px; font-family:'Poppins',sans-serif; font-size:14px; cursor:pointer;
+  }
+  .viewport{ width:100%; display:flex; align-items:center; justify-content:center; }
+  .scaler{ position:relative; }
+
+  /* ============ THE BADGE CANVAS ============ */
+  .canvas{
+    position:relative;
+    width:var(--canvas-w); height:var(--canvas-h);
+    transform-origin: top left;
+    background: var(--navy-950);
+    overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+  }
+  /* fine grid, like the SCD·26 site background */
+  .canvas::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;
+    z-index:0;
+  }
+  /* soft cyan glow bottom-right, echoing the SCD·26 hero glow */
+  .canvas::after{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(560px 520px at 88% 70%, rgba(53,231,255,.14) 0%, transparent 60%),
+      radial-gradient(700px 500px at 10% 4%, rgba(53,231,255,.08) 0%, transparent 55%);
+  }
+  .vignette{
+    position:absolute; inset:0; z-index:7; pointer-events:none;
+    background: radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(0,0,0,.5) 100%);
+  }
+
+  /* ---------- content column (flow-based, avoids collisions) ---------- */
+  .content{
+    position:relative; z-index:2;
+    display:flex; flex-direction:column; align-items:center;
+    padding-top:70px; gap:24px;
+  }
+  .row-full{ width:100%; padding:0 70px; }
+
+  /* meta line — monospace, SCD·26-style */
+  .meta-line{
+    display:flex; justify-content:space-between; width:100%;
+    font-family:'JetBrains Mono',monospace; font-size:16px; letter-spacing:.5px;
+    color:var(--grey-400); opacity:.85;
+  }
+
+  /* pill chip — SCD·26-style */
+  .pill{
+    display:inline-flex; align-items:center; gap:10px;
+    border:1px solid rgba(53,231,255,.45); border-radius:999px;
+    padding:10px 22px; background:rgba(53,231,255,.05);
+    font-family:'JetBrains Mono',monospace; font-size:16px; letter-spacing:.5px;
+    color:var(--cyan);
+  }
+  .pill .dot{ width:7px; height:7px; border-radius:50%; background:var(--mint); }
+  @media (prefers-reduced-motion: no-preference){
+    .pill .dot{ animation: pulse 1.8s ease-in-out infinite; }
+  }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+  /* AWS logo — approximated, see notes */
+  .aws-logo{ width:206px; text-align:center; }
+  .aws-logo .aws-text{
+    font-family:'Poppins',sans-serif; font-weight:800; font-size:48px;
+    color:var(--white); letter-spacing:-1px; display:block; line-height:1;
+  }
+  .aws-logo svg{ width:190px; height:36px; margin-top:-2px; }
+
+  .label-student{ font-weight:600; font-size:30px; letter-spacing:10px; color:var(--white); }
+
+  .title-main{
+    text-align:center; font-weight:900; font-size:96px; line-height:.95; letter-spacing:-1px;
+    color:var(--cyan); text-shadow:0 0 18px var(--cyan-glow), 0 0 46px rgba(53,231,255,.3);
+  }
+
+  .subtitle-row{ display:flex; align-items:center; gap:16px; }
+  .subtitle-row .orn-line{ width:96px; height:1px; background:var(--cyan); opacity:.55; }
+  .subtitle-row .orn-dot{ width:6px; height:6px; border-radius:50%; background:var(--cyan); opacity:.8; }
+  .subtitle-row .subtitle{ font-weight:600; font-size:30px; letter-spacing:8px; color:var(--cyan); }
+
+  /* ---------- Photo area ---------- */
+  .photo-frame{
+    width:680px; height:680px;
+    clip-path: polygon(52px 0, calc(100% - 52px) 0, 100% 52px, 100% calc(100% - 52px), calc(100% - 52px) 100%, 52px 100%, 0 calc(100% - 52px), 0 52px);
+    background: linear-gradient(135deg, var(--cyan), #0d6e82);
+    padding:3px;
+    filter: drop-shadow(0 0 22px var(--cyan-glow)) drop-shadow(0 0 50px rgba(53,231,255,.22));
+  }
+  .photo-inner{
+    width:100%; height:100%; overflow:hidden; background:#0a1420;
+    clip-path: polygon(49px 0, calc(100% - 49px) 0, 100% 49px, 100% calc(100% - 49px), calc(100% - 49px) 100%, 49px 100%, 0 calc(100% - 49px), 0 49px);
+  }
+  .photo-inner img{ width:100%; height:100%; object-fit:cover; object-position:50% 20%; display:block; }
+
+  /* ---------- Role banner — terminal-chip styled ---------- */
+  .role-banner{
+    width:680px; height:66px;
+    border:1px solid rgba(53,231,255,.7);
+    background:rgba(53,231,255,.06);
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%);
+    display:flex; align-items:center; justify-content:center; gap:16px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .role-banner .bracket{ color:var(--cyan-dim); font-size:26px; }
+  .role-banner .role-text{ font-weight:700; font-size:27px; letter-spacing:5px; color:var(--cyan); }
+
+  /* ---------- Name / footer (left aligned block) ---------- */
+  .left-block{ width:860px; }
+  .name-block{
+    font-weight:800; font-size:62px; line-height:1.08; color:var(--white); letter-spacing:-.5px;
+  }
+  .footer-row{
+    margin-top:22px;
+    display:flex; align-items:center; gap:18px;
+    font-size:24px; color:var(--grey-200); font-weight:500;
+  }
+  .footer-row .footer-item{ display:flex; align-items:center; gap:10px; }
+  .footer-row svg{ width:20px; height:20px; }
+  .footer-row .divider{ color:rgba(255,255,255,.3); font-weight:300; }
+
+  /* ---------- Terminal panel — decorative footer, SCD·26-style ---------- */
+  .terminal{
+    width:860px; border-radius:10px; overflow:hidden;
+    background:rgba(6,14,20,.75); border:1px solid rgba(53,231,255,.25);
+    backdrop-filter: blur(2px);
+  }
+  .terminal-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px; border-bottom:1px solid rgba(53,231,255,.15);
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--grey-400);
+  }
+  .terminal-bar .dots{ display:flex; gap:6px; }
+  .terminal-bar .dots span{ width:9px; height:9px; border-radius:50%; background:#3a4658; }
+  .terminal-bar .live{ display:flex; align-items:center; gap:6px; color:var(--mint); }
+  .terminal-bar .live .dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); }
+  .terminal-body{ padding:16px 18px 20px; font-family:'JetBrains Mono',monospace; font-size:16px; line-height:1.7; }
+  .terminal-body .prompt{ color:var(--cyan); }
+  .terminal-body .out{ color:var(--grey-400); }
+  .terminal-body .ok{ color:var(--mint); }
+  .terminal-body .cursor{
+    display:inline-block; width:9px; height:16px; background:var(--cyan); margin-left:4px; vertical-align:-2px;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .terminal-body .cursor{ animation: blink 1s steps(1) infinite; }
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="controls">
+    <div class="format-label">Badge 9:16 — 1080 × 1920 px</div>
+    <label class="role-control">
+      Rol / Título:
+      <select id="roleSelect">
+        <option value="PARTICIPANTE" selected>Participante</option>
+        <option value="ASISTENTE">Asistente</option>
+        <option value="VOLUNTARIO">Voluntario</option>
+        <option value="VOLUNTARIA">Voluntaria</option>
+        <option value="SPEAKER">Speaker</option>
+        <option value="ORGANIZADOR">Organizador</option>
+        <option value="ORGANIZADORA">Organizadora</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="viewport">
+    <div class="scaler" id="scaler">
+      <div class="canvas" id="canvas">
+        <div class="vignette"></div>
+
+        <div class="content">
+
+          <div class="row-full meta-line">
+            <span>// COCHABAMBA · BOLIVIA</span>
+            <span>SYS // SCD · 2026</span>
+          </div>
+
+          <div class="pill"><span class="dot"></span>AWS STUDENT COMMUNITY DAY · BOLIVIA · 2026</div>
+
+          <!-- AWS logo (approximated — see explanation for asset replacement) -->
+          <div class="aws-logo">
+            <span class="aws-text">aws</span>
+            <svg viewBox="0 0 210 50" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 16 Q100 56 196 12" stroke="#ff9900" stroke-width="6" fill="none" stroke-linecap="round"/>
+              <polygon points="188,2 207,10 190,22" fill="#ff9900"/>
+            </svg>
+          </div>
+
+          <div class="label-student">STUDENT</div>
+          <h1 class="title-main">COMMUNITY<br>DAY</h1>
+          <div class="subtitle-row">
+            <span class="orn-line"></span><span class="orn-dot"></span>
+            <span class="subtitle">COCHABAMBA</span>
+            <span class="orn-dot"></span><span class="orn-line"></span>
+          </div>
+
+          <!-- Photo Area -->
+          <div class="photo-frame">
+            <div class="photo-inner">
+              <img src="https://picsum.photos/id/1005/900/900" alt="Foto de ejemplo del participante">
+            </div>
+          </div>
+
+          <!-- Role banner -->
+          <div class="role-banner">
+            <span class="bracket">[</span>
+            <span class="role-text" id="roleText">PARTICIPANTE</span>
+            <span class="bracket">]</span>
+          </div>
+
+          <div class="left-block">
+            <div class="name-block">SEBASTIÁN CHACÓN</div>
+            <div class="footer-row">
+              <span class="footer-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#35e7ff" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+                10 October 2026
+              </span>
+              <span class="divider">|</span>
+              <span class="footer-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#35e7ff" stroke-width="2"><path d="M12 22s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                Cochabamba, Bolivia
+              </span>
+            </div>
+          </div>
+
+          <!-- decorative terminal panel, echoing the SCD·26 site widget -->
+          <div class="terminal">
+            <div class="terminal-bar">
+              <div class="dots"><span></span><span></span><span></span></div>
+              <div>SCD-CLI // BADGE.ZSH</div>
+              <div class="live"><span class="dot"></span>LIVE</div>
+            </div>
+            <div class="terminal-body">
+              <div><span class="prompt">badge@scd</span> ~ $ issue --participant</div>
+              <div class="out">&gt; verifying registration...</div>
+              <div class="out">&gt; role: <span id="roleTextEcho">PARTICIPANTE</span></div>
+              <div class="ok">✓ badge generated</div>
+              <div><span class="prompt">badge@scd</span> ~ $ <span class="cursor"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fit(){
+    var W = 1080, H = 1920;
+    var scale = Math.min((window.innerWidth - 40) / W, (window.innerHeight - 160) / H, 1);
+    var canvas = document.getElementById('canvas');
+    var scaler = document.getElementById('scaler');
+    canvas.style.transform = 'scale(' + scale + ')';
+    scaler.style.width = (W * scale) + 'px';
+    scaler.style.height = (H * scale) + 'px';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  document.getElementById('roleSelect').addEventListener('change', function(e){
+    document.getElementById('roleText').textContent = e.target.value;
+    document.getElementById('roleTextEcho').textContent = e.target.value;
+  });
+</script>
+</body>
+</html>
