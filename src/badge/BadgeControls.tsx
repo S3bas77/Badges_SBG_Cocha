@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, RefObject } from 'react'
 import type { BadgeState, FormatId, RoleId } from './types'
 
 interface BadgeControlsProps {
@@ -13,6 +13,7 @@ interface BadgeControlsProps {
   onDownload: () => void
   isExporting: boolean
   exportError: string | null
+  fileInputRef?: RefObject<HTMLInputElement | null>
 }
 
 const roles: Array<{ value: RoleId; label: string }> = [
@@ -36,9 +37,11 @@ export function BadgeControls({
   onDownload,
   isExporting,
   exportError,
+  fileInputRef,
 }: BadgeControlsProps) {
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const fileInput = useRef<HTMLInputElement>(null)
+  const localFileInput = useRef<HTMLInputElement>(null)
+  const inputRef = fileInputRef ?? localFileInput
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -85,7 +88,7 @@ export function BadgeControls({
 
       <div className="control-group">
         <div className="control-label-row"><label htmlFor="photo-upload">Photograph</label><span>10 MB max</span></div>
-        <input ref={fileInput} id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileChange} />
+        <input ref={inputRef} id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileChange} />
         {uploadError && <p className="control-error" role="alert">{uploadError}</p>}
       </div>
 

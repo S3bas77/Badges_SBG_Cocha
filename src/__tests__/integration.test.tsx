@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import { BadgeControls } from '../badge/BadgeControls'
 import { awsLogoSrc } from '../badge/designSystem'
@@ -68,6 +68,16 @@ describe('badge generator integration', () => {
 
     expect(screen.getByRole('alert').textContent).toContain('JPEG, PNG, WebP, or GIF')
     expect(document.querySelector('.badge-photo-placeholder')).toBeTruthy()
+  })
+
+  it('opens the existing file picker when the badge upload area is clicked', () => {
+    render(<App />)
+    const input = screen.getByLabelText('Photograph') as HTMLInputElement
+    const clickSpy = vi.spyOn(input, 'click')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Upload a photo' }))
+
+    expect(clickSpy).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the download control disabled while export is in progress', () => {

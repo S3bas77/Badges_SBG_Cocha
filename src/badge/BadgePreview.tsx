@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { CSSProperties, MouseEvent, TouchEvent } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent, TouchEvent } from 'react'
 import { awsLogoSrc, calendarIconPath, colors, mapPinIconPath, watermarkPath } from './designSystem'
 import { computePhotoDrawPosition } from './photoUtils'
 import type { BadgeState, LayoutDefinition, PhotoAreaDef, TextElementDef } from './types'
@@ -9,6 +9,7 @@ interface BadgePreviewProps {
   layout: LayoutDefinition
   wrapperWidth: number
   onDragOffset: (offsetX: number, offsetY: number) => void
+  onRequestPhotoUpload: () => void
 }
 
 interface Point {
@@ -62,7 +63,7 @@ function Icon({ path }: { path: string }) {
   )
 }
 
-export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: BadgePreviewProps) {
+export function BadgePreview({ state, layout, wrapperWidth, onDragOffset, onRequestPhotoUpload }: BadgePreviewProps) {
   const dragStart = useRef<Point | null>(null)
   const previewScale = wrapperWidth / layout.canvasWidth
   const photoArea = layout.photoArea
@@ -87,11 +88,26 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
     layout.nameBlock.minFontSize,
     layout.nameBlock.maxWidth,
   )
-  const backgroundImage = [
+  const backgroundLayers: string[] = []
+  const backgroundSizes: string[] = []
+  if (layout.background.dotSpacing && layout.background.dotColor) {
+    const dotRadius = layout.background.dotRadius ?? 1
+    backgroundLayers.push(`radial-gradient(circle, ${layout.background.dotColor} ${dotRadius}px, transparent ${dotRadius + 0.5}px)`)
+    backgroundSizes.push(`${layout.background.dotSpacing}px ${layout.background.dotSpacing}px`)
+  }
+  backgroundLayers.push(
     `linear-gradient(${layout.background.gridColor} 1px, transparent 1px)`,
     `linear-gradient(90deg, ${layout.background.gridColor} 1px, transparent 1px)`,
-    ...layout.background.gradients,
-  ].join(', ')
+  )
+  backgroundSizes.push(
+    `${layout.background.gridSize}px ${layout.background.gridSize}px`,
+    `${layout.background.gridSize}px ${layout.background.gridSize}px`,
+  )
+  for (const gradient of layout.background.gradients) {
+    backgroundLayers.push(gradient)
+    backgroundSizes.push('auto')
+  }
+  const backgroundImage = backgroundLayers.join(', ')
 
   const beginDrag = (point: Point) => {
     if (state.photo) {
@@ -113,6 +129,13 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
 
   const endDrag = () => {
     dragStart.current = null
+  }
+
+  const handlePhotoKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onRequestPhotoUpload()
+    }
   }
 
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
@@ -145,7 +168,7 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
     transformOrigin: 'top left',
     backgroundColor: layout.background.base,
     backgroundImage,
-    backgroundSize: `${layout.background.gridSize}px ${layout.background.gridSize}px, ${layout.background.gridSize}px ${layout.background.gridSize}px, auto, auto`,
+    backgroundSize: backgroundSizes.join(', '),
     overflow: 'hidden',
     color: colors.white,
   }
@@ -165,9 +188,6 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
             dangerouslySetInnerHTML={{ __html: watermarkPath }}
           />
         )}
-        {layout.techSpecks?.map((speck) => (
-          <span key={`${speck.top}-${speck.left}`} className="badge-tech-speck" style={{ top: speck.top, left: speck.left, width: speck.width, height: speck.height, opacity: speck.opacity }} />
-        ))}
         {layout.cornerBrackets?.map((bracket, index) => {
           const bottomRight = bracket.bottom !== undefined && bracket.right !== undefined
           return (
@@ -205,7 +225,17 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
         <div style={textStyle(layout.studentLabel)}>{layout.studentLabel.text}</div>
         <div style={textStyle(layout.communityDayTitle)}>
           {layout.communityDayTitle.lines
-            ? layout.communityDayTitle.lines.map((line) => <div key={line}>{line}</div>)
+            ? layout.communityDayTitle.lines.map((line, index) => (
+                <div
+                  key={line}
+                  style={{
+                    color: layout.communityDayTitle.lineColors?.[index] ?? layout.communityDayTitle.color,
+                    textShadow: layout.communityDayTitle.lineGlow?.[index] ? layout.communityDayTitle.textShadow : 'none',
+                  }}
+                >
+                  {line}
+                </div>
+              ))
             : layout.communityDayTitle.text}
         </div>
         <div
@@ -220,7 +250,12 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
         </div>
         <div
           className="badge-photo-frame"
-          style={{ left: photoArea.x, top: photoArea.y, width: photoArea.width, height: photoArea.height, clipPath: photoClip, background: `linear-gradient(135deg, ${photoArea.borderGradient[0]}, ${photoArea.borderGradient[1]})`, filter: photoArea.glow, cursor: state.photo ? 'grab' : 'default' }}
+          style={{ left: photoArea.x, top: photoArea.y, width: photoArea.width, height: photoArea.height, clipPath: photoClip, background: `linear-gradient(135deg, ${photoArea.borderGradient[0]}, ${photoArea.borderGradient[1]})`, filter: photoArea.glow, cursor: state.photo ? 'grab' : 'pointer' }}
+          role={state.photo ? undefined : 'button'}
+          tabIndex={state.photo ? -1 : 0}
+          aria-label={state.photo ? undefined : 'Upload a photo'}
+          onClick={state.photo ? undefined : onRequestPhotoUpload}
+          onKeyDown={state.photo ? undefined : handlePhotoKeyDown}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={endDrag}
@@ -237,11 +272,9 @@ export function BadgePreview({ state, layout, wrapperWidth, onDragOffset }: Badg
           className={`badge-role-banner badge-role-${layout.roleBanner.clipVariant}`}
           style={{ left: layout.roleBanner.x, top: layout.roleBanner.y, width: layout.roleBanner.width, height: layout.roleBanner.height, border: `1px solid ${layout.roleBanner.border}`, background: layout.roleBanner.background, filter: 'drop-shadow(0 0 12px rgba(53,231,255,.16))' }}
         >
-          {layout.roleBanner.leftBracket && <span style={{ color: layout.roleBanner.bracketColor, fontFamily: layout.roleBanner.bracketFont }}>{layout.roleBanner.leftBracket}</span>}
-          {!layout.roleBanner.leftBracket && <span className="badge-role-chevron">«</span>}
-          <strong style={{ fontFamily: layout.roleBanner.textFont, fontSize: layout.roleBanner.textSize, color: layout.roleBanner.textColor, letterSpacing: layout.roleBanner.letterSpacing }}>{state.role}</strong>
-          {layout.roleBanner.rightBracket && <span style={{ color: layout.roleBanner.bracketColor, fontFamily: layout.roleBanner.bracketFont }}>{layout.roleBanner.rightBracket}</span>}
-          {!layout.roleBanner.rightBracket && <span className="badge-role-chevron">»</span>}
+          <span className="badge-role-dot" style={{ width: layout.roleBanner.dotSize, height: layout.roleBanner.dotSize, background: layout.roleBanner.textColor }} />
+          <strong style={{ fontFamily: layout.roleBanner.textFont, fontWeight: 600, fontSize: layout.roleBanner.textSize, color: layout.roleBanner.textColor, letterSpacing: layout.roleBanner.letterSpacing }}>{state.role}</strong>
+          <span className="badge-role-dot" style={{ width: layout.roleBanner.dotSize, height: layout.roleBanner.dotSize, background: layout.roleBanner.textColor }} />
         </div>
         <div className="badge-name-block" style={{ left: layout.nameBlock.x, top: layout.nameBlock.y, width: layout.nameBlock.maxWidth, maxHeight: layout.footer.y - layout.nameBlock.y - 8, textAlign: 'center', fontFamily: layout.nameBlock.fontFamily, fontWeight: layout.nameBlock.fontWeight, fontSize: nameFontSize, lineHeight: layout.nameBlock.lineHeight, color: layout.nameBlock.color }}>{state.name || 'Your name'}</div>
         <div className="badge-footer-row" style={{ left: layout.footer.x, top: layout.footer.y, width: layout.canvasWidth - layout.footer.x * 2, justifyContent: 'center', gap: layout.footer.gap, fontFamily: layout.footer.fontFamily, fontWeight: layout.footer.fontWeight, fontSize: layout.footer.fontSize, color: layout.footer.color }}>

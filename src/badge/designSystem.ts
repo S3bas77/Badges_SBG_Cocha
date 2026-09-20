@@ -1,10 +1,10 @@
 /**
  * Typography note:
- * The badge design specifies Amazon Ember Bold (COMMUNITY DAY) and Amazon Ember Condensed Bold (STUDENT).
+ * The badge design specifies Amazon Ember for the event wordmark.
  * Amazon Ember is a proprietary font owned by Amazon and is not publicly available.
  * This project uses Poppins (Google Fonts) as the implementation font:
- * - COMMUNITY DAY: Poppins weight 900 (closest available equivalent to Amazon Ember Bold/Heavy)
- * - STUDENT: Poppins weight 800 (closest available equivalent to Amazon Ember Condensed Bold)
+ * - COMMUNITY / DAY: Poppins weight 300 (light, wide tracking) for a slim, technical event-title look
+ * - STUDENT: Poppins weight 300 (light, wide tracking) matching the event title
  * If Amazon Ember font files are provided by the event organizer, declare them in @font-face
  * in src/index.css and update the fontFamily values in the layout definitions.
  */
@@ -14,7 +14,6 @@ export const colors = {
   navy900: '#060a16',
   navy800: '#0a1224',
   cyan: '#35e7ff',
-  cyanDim: '#1c9db8',
   cyanGlow: 'rgba(53,231,255,0.5)',
   orange: '#ff9900',
   yellow: '#ffce54',

@@ -66,6 +66,13 @@ function drawBackground(context: CanvasRenderingContext2D, layout: LayoutDefinit
   context.fillStyle = layout.background.base
   context.fillRect(0, 0, layout.canvasWidth, layout.canvasHeight)
 
+  const wash = context.createLinearGradient(0, 0, 0, layout.canvasHeight)
+  wash.addColorStop(0, 'rgba(17,30,54,.5)')
+  wash.addColorStop(0.45, 'rgba(6,10,20,.1)')
+  wash.addColorStop(1, 'rgba(11,20,38,.48)')
+  context.fillStyle = wash
+  context.fillRect(0, 0, layout.canvasWidth, layout.canvasHeight)
+
   context.strokeStyle = layout.background.gridColor
   context.lineWidth = 1
   for (let x = 0; x <= layout.canvasWidth; x += layout.background.gridSize) {
@@ -81,28 +88,18 @@ function drawBackground(context: CanvasRenderingContext2D, layout: LayoutDefinit
     context.stroke()
   }
 
-  drawEllipticalGradient(context, layout.canvasWidth * 0.88, layout.canvasHeight * 0.7, 280, 260, 'rgba(53,231,255,.14)', 0.6)
-  drawEllipticalGradient(context, layout.canvasWidth * 0.1, layout.canvasHeight * 0.04, 350, 250, 'rgba(53,231,255,.08)', 0.55)
-}
-
-function drawEllipticalGradient(
-  context: CanvasRenderingContext2D,
-  centerX: number,
-  centerY: number,
-  radiusX: number,
-  radiusY: number,
-  color: string,
-  stop: number,
-): void {
-  context.save()
-  context.translate(centerX, centerY)
-  context.scale(1, radiusY / radiusX)
-  const gradient = context.createRadialGradient(0, 0, 0, 0, 0, radiusX)
-  gradient.addColorStop(0, color)
-  gradient.addColorStop(stop, 'transparent')
-  context.fillStyle = gradient
-  context.fillRect(-radiusX, -radiusX, radiusX * 2, radiusX * 2)
-  context.restore()
+  if (layout.background.dotSpacing && layout.background.dotColor) {
+    const spacing = layout.background.dotSpacing
+    const radius = layout.background.dotRadius ?? 1
+    context.fillStyle = layout.background.dotColor
+    for (let x = spacing / 2; x <= layout.canvasWidth; x += spacing) {
+      for (let y = spacing / 2; y <= layout.canvasHeight; y += spacing) {
+        context.beginPath()
+        context.arc(x, y, radius, 0, Math.PI * 2)
+        context.fill()
+      }
+    }
+  }
 }
 
 function drawDecorations(context: CanvasRenderingContext2D, layout: LayoutDefinition): void {
@@ -135,16 +132,6 @@ function drawDecorations(context: CanvasRenderingContext2D, layout: LayoutDefini
     void watermarkPath
   }
 
-  if (layout.techSpecks) {
-    context.strokeStyle = colors.cyan
-    context.lineWidth = 1.5
-    for (const speck of layout.techSpecks) {
-      context.globalAlpha = speck.opacity
-      context.strokeRect(speck.left, speck.top, speck.width, speck.height)
-    }
-    context.globalAlpha = 1
-  }
-
   if (layout.cornerBrackets) {
     for (const bracket of layout.cornerBrackets) {
       const bottomRight = bracket.bottom !== undefined && bracket.right !== undefined
@@ -153,18 +140,33 @@ function drawDecorations(context: CanvasRenderingContext2D, layout: LayoutDefini
       const horizontalX = bottomRight ? anchorX + 132 - bracket.horizontalWidth : anchorX
       const horizontalY = bottomRight ? anchorY + 132 - bracket.horizontalHeight : anchorY
       const verticalX = bottomRight ? anchorX + 132 - bracket.verticalWidth : anchorX
-      const horizontal = context.createLinearGradient(horizontalX, horizontalY, horizontalX + bracket.horizontalWidth, horizontalY)
-      horizontal.addColorStop(0, bracket.horizontalGradient.includes('#ffce54') ? colors.yellow : colors.orange)
-      horizontal.addColorStop(1, colors.orange)
-      context.fillStyle = horizontal
+      context.save()
+      context.shadowColor = 'rgba(255,226,120,.55)'
+      context.shadowBlur = 10
+      context.fillStyle = createBracketGradient(context, bracket.horizontalGradient, horizontalX, horizontalY, horizontalX + bracket.horizontalWidth, horizontalY)
       context.fillRect(horizontalX, horizontalY, bracket.horizontalWidth, bracket.horizontalHeight)
-      const vertical = context.createLinearGradient(verticalX, anchorY, verticalX, anchorY + bracket.verticalHeight)
-      vertical.addColorStop(0, bracket.verticalGradient.includes('#ffce54') ? colors.yellow : colors.orange)
-      vertical.addColorStop(1, colors.orange)
-      context.fillStyle = vertical
+      context.fillStyle = createBracketGradient(context, bracket.verticalGradient, verticalX, anchorY, verticalX, anchorY + bracket.verticalHeight)
       context.fillRect(verticalX, anchorY, bracket.verticalWidth, bracket.verticalHeight)
+      context.restore()
     }
   }
+}
+
+function createBracketGradient(
+  context: CanvasRenderingContext2D,
+  css: string,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): CanvasGradient {
+  const gradient = context.createLinearGradient(x0, y0, x1, y1)
+  const matches = css.match(/#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}/g)
+  const stops = matches && matches.length > 0 ? matches : [colors.orange]
+  stops.forEach((color, index) => {
+    gradient.addColorStop(stops.length === 1 ? 0 : index / (stops.length - 1), color)
+  })
+  return gradient
 }
 
 function setFont(context: CanvasRenderingContext2D, family: string, weight: number, size: number): void {
@@ -208,12 +210,13 @@ function drawBranding(context: CanvasRenderingContext2D, layout: LayoutDefinitio
 
   const title = layout.communityDayTitle
   setFont(context, title.fontFamily, title.fontWeight, title.fontSize)
-  context.fillStyle = title.color
-  context.shadowColor = colors.cyanGlow
-  context.shadowBlur = 18
   const titleLines = title.lines ?? [title.text ?? 'COMMUNITY DAY']
   const lineHeight = title.fontSize * (title.lineHeight ?? 1)
   titleLines.forEach((line, index) => {
+    const glow = title.lineGlow?.[index] ?? true
+    context.fillStyle = title.lineColors?.[index] ?? title.color
+    context.shadowColor = glow ? colors.cyanGlow : 'transparent'
+    context.shadowBlur = glow ? 18 : 0
     const width = measuredTrackedWidth(context, line, title.letterSpacing)
     drawTrackedText(context, line, title.x + (title.width - width) / 2, title.y + title.fontSize + index * lineHeight, title.letterSpacing)
   })
@@ -254,7 +257,7 @@ function drawPhoto(context: CanvasRenderingContext2D, layout: LayoutDefinition, 
   borderGradient.addColorStop(1, area.borderGradient[1])
   context.save()
   context.shadowColor = colors.cyanGlow
-  context.shadowBlur = 22
+  context.shadowBlur = 14
   context.fillStyle = borderGradient
   context.fill(polygonPath(area))
   context.restore()
@@ -298,23 +301,23 @@ function drawRoleBanner(context: CanvasRenderingContext2D, layout: LayoutDefinit
   context.stroke(path)
   context.restore()
 
-  const bracketFont = banner.bracketFont ?? banner.textFont
-  setFont(context, bracketFont, 400, banner.textSize)
-  context.fillStyle = banner.bracketColor ?? banner.textColor
-  const leftBracket = banner.leftBracket ?? '«'
-  const rightBracket = banner.rightBracket ?? '»'
+  const dotSize = banner.dotSize ?? 7
+  const gap = 16
+  setFont(context, banner.textFont, 600, banner.textSize)
   const roleWidth = measuredTrackedWidth(context, role, banner.letterSpacing)
-  setFont(context, banner.textFont, 700, banner.textSize)
-  const bracketWidth = context.measureText(leftBracket).width + context.measureText(rightBracket).width
-  const totalWidth = bracketWidth + roleWidth + (banner.clipVariant === 'hexagon' ? 44 : 32)
-  let x = banner.x + (banner.width - totalWidth) / 2
-  context.fillText(leftBracket, x, banner.y + banner.height / 2 + banner.textSize / 3)
-  x += context.measureText(leftBracket).width + (banner.clipVariant === 'hexagon' ? 22 : 16)
+  const groupWidth = dotSize * 2 + gap * 2 + roleWidth
+  let cursor = banner.x + (banner.width - groupWidth) / 2
+  const centerY = banner.y + banner.height / 2
   context.fillStyle = banner.textColor
-  drawTrackedText(context, role, x, banner.y + banner.height / 2 + banner.textSize / 3, banner.letterSpacing)
-  x += roleWidth + (banner.clipVariant === 'hexagon' ? 22 : 16)
-  context.fillStyle = banner.bracketColor ?? banner.textColor
-  context.fillText(rightBracket, x, banner.y + banner.height / 2 + banner.textSize / 3)
+  context.beginPath()
+  context.arc(cursor + dotSize / 2, centerY, dotSize / 2, 0, Math.PI * 2)
+  context.fill()
+  cursor += dotSize + gap
+  drawTrackedText(context, role, cursor, centerY + banner.textSize * 0.35, banner.letterSpacing)
+  cursor += roleWidth + gap
+  context.beginPath()
+  context.arc(cursor + dotSize / 2, centerY, dotSize / 2, 0, Math.PI * 2)
+  context.fill()
 }
 
 function fitName(context: CanvasRenderingContext2D, name: string, definition: NameBlockDef): { fontSize: number; lines: string[] } {
@@ -482,13 +485,18 @@ function drawMetaAndPill(context: CanvasRenderingContext2D, layout: LayoutDefini
     context.roundRect(pill.x, pill.y, pill.width, pill.height, pill.borderRadius)
     context.fill()
     context.stroke()
+    setFont(context, pill.fontFamily, pill.fontWeight, pill.fontSize)
+    const pillTextWidth = measuredTrackedWidth(context, pill.text, pill.letterSpacing)
+    const groupWidth = pill.dotSize + pill.gap + pillTextWidth
+    let cursor = pill.x + (pill.width - groupWidth) / 2
+    const centerY = pill.y + pill.height / 2
     context.fillStyle = pill.dotColor
     context.beginPath()
-    context.arc(pill.x + pill.paddingX + pill.dotSize / 2, pill.y + pill.height / 2, pill.dotSize / 2, 0, Math.PI * 2)
+    context.arc(cursor + pill.dotSize / 2, centerY, pill.dotSize / 2, 0, Math.PI * 2)
     context.fill()
-    setFont(context, pill.fontFamily, pill.fontWeight, pill.fontSize)
+    cursor += pill.dotSize + pill.gap
     context.fillStyle = pill.color
-    context.fillText(pill.text, pill.x + pill.paddingX + pill.dotSize + pill.gap, pill.y + pill.paddingY + pill.fontSize)
+    drawTrackedText(context, pill.text, cursor, centerY + pill.fontSize * 0.35, pill.letterSpacing)
   }
 }
 

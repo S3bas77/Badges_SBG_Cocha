@@ -33,6 +33,7 @@ function App() {
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const previewColumn = useRef<HTMLDivElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const layout = layouts[state.format]
 
   useEffect(() => {
@@ -171,6 +172,7 @@ function App() {
 
   const handleNameChange = (name: string) => setState((current) => ({ ...current, name }))
   const handleRoleChange = (role: RoleId) => setState((current) => ({ ...current, role }))
+  const requestPhotoUpload = () => photoInputRef.current?.click()
   const handleDownload = async () => {
     setIsExporting(true)
     setExportError(null)
@@ -204,10 +206,11 @@ function App() {
           onDownload={handleDownload}
           isExporting={isExporting}
           exportError={exportError}
+          fileInputRef={photoInputRef}
         />
         <section className="preview-column" ref={previewColumn} aria-label="Badge preview">
           <div className="preview-heading"><span>Live preview</span><span>{layout.canvasWidth} × {layout.canvasHeight} px</span></div>
-          <BadgePreview state={state} layout={layout} wrapperWidth={previewWidth} onDragOffset={handleDragOffset} />
+          <BadgePreview state={state} layout={layout} wrapperWidth={previewWidth} onDragOffset={handleDragOffset} onRequestPhotoUpload={requestPhotoUpload} />
         </section>
       </div>
     </main>

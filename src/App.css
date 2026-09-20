@@ -139,6 +139,7 @@ button:disabled {
   margin: 0 0 20px;
   padding: 0;
   border: 0;
+  text-align: left;
 }
 
 .control-group legend,
@@ -208,6 +209,7 @@ button:disabled {
   border-radius: 5px;
   color: var(--app-ink);
   background: #070b13;
+  text-align: left;
 }
 
 .control-group input[type='file'] {
@@ -301,7 +303,6 @@ input[type='range'] {
 }
 
 .badge-watermark,
-.badge-tech-speck,
 .badge-corner-bracket,
 .badge-meta-line,
 .badge-pill,
@@ -321,14 +322,10 @@ input[type='range'] {
   pointer-events: none;
 }
 
-.badge-tech-speck {
-  border: 1.5px solid var(--app-cyan);
-  pointer-events: none;
-}
-
 .badge-corner-bracket {
   width: 132px;
   height: 132px;
+  filter: drop-shadow(0 0 8px rgba(255, 226, 120, 0.55));
   pointer-events: none;
 }
 
@@ -424,13 +421,23 @@ input[type='range'] {
   font-size: 16px;
   letter-spacing: 1px;
   background: repeating-linear-gradient(135deg, #0a1420, #0a1420 14px, #0c1a29 14px, #0c1a29 28px);
+  transition: color 0.18s ease;
+}
+
+.badge-photo-frame[role='button']:hover .badge-photo-placeholder {
+  color: #9fb0c8;
+}
+
+.badge-photo-frame[role='button']:focus-visible .badge-photo-placeholder {
+  outline: 2px solid var(--app-cyan);
+  outline-offset: -14px;
 }
 
 .badge-role-banner {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 16px;
   box-sizing: border-box;
 }
 
@@ -443,14 +450,14 @@ input[type='range'] {
   border-radius: 999px;
 }
 
-.badge-role-banner strong {
-  white-space: nowrap;
+.badge-role-dot {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  opacity: 0.85;
 }
 
-.badge-role-chevron {
-  color: var(--app-cyan);
-  font-size: 20px;
-  font-weight: 700;
+.badge-role-banner strong {
+  white-space: nowrap;
 }
 
 .badge-name-block {

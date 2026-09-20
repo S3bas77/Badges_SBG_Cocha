@@ -55,10 +55,7 @@ export interface RoleBannerDef {
   textSize: number
   textColor: string
   letterSpacing: number
-  bracketFont?: string
-  leftBracket?: string
-  rightBracket?: string
-  bracketColor?: string
+  dotSize?: number
 }
 
 export interface BackgroundDef {
@@ -67,6 +64,9 @@ export interface BackgroundDef {
   gridColor: string
   gridOpacity: number
   gradients: string[]
+  dotSpacing?: number
+  dotRadius?: number
+  dotColor?: string
 }
 
 export interface WatermarkDef {
@@ -78,14 +78,6 @@ export interface WatermarkDef {
   stroke: string
   strokeWidth: number
   viewBox: string
-}
-
-export interface TechSpeckDef {
-  top: number
-  left: number
-  width: number
-  height: number
-  opacity: number
 }
 
 export interface CornerBracketDef {
@@ -127,6 +119,8 @@ export interface TextElementDef {
   textAlign?: 'left' | 'center' | 'right'
   text?: string
   lines?: string[]
+  lineColors?: string[]
+  lineGlow?: boolean[]
   textShadow?: string
 }
 
@@ -178,8 +172,6 @@ export interface PillBadgeDef {
   dotSize: number
   dotColor: string
   gap: number
-  paddingX: number
-  paddingY: number
 }
 
 export interface TerminalPanelDef {
@@ -231,7 +223,6 @@ export interface LayoutDefinition {
   canvasHeight: number
   background: BackgroundDef
   watermark?: WatermarkDef
-  techSpecks?: TechSpeckDef[]
   cornerBrackets?: CornerBracketDef[]
   awsLogoBlock: AwsLogoBlockDef
   studentLabel: TextElementDef

@@ -150,11 +150,9 @@ describe('canvas export', () => {
     const name = 'A'.repeat(200)
     await renderToCanvas(layout4x5, makeState('4x5', name))
 
-    // Filter out studentLabel calls (weight 800, fontSize 30) — they're drawn before the name block
+    // Only the name block renders at weight 800
     const nameWeight = layout4x5.nameBlock.fontWeight
-    const studentFontSize = layout4x5.studentLabel.fontSize
-    const nameCalls = context.fills.filter(({ font }) =>
-      font.startsWith(`${nameWeight} `) && !font.startsWith(`${nameWeight} ${studentFontSize}px`))
+    const nameCalls = context.fills.filter(({ font }) => font.startsWith(`${nameWeight} `))
     const fontSize = Number(nameCalls[0]?.font.match(/(\d+)px/)?.[1])
     expect(name.length * 10).toBeGreaterThan(layout4x5.nameBlock.maxWidth)
     expect(fontSize).toBe(layout4x5.nameBlock.minFontSize)
