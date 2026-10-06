@@ -19,7 +19,6 @@ interface BadgeControlsProps {
 const roles: Array<{ value: RoleId; label: string }> = [
   { value: 'PARTICIPANTE', label: 'Participante' },
   { value: 'SPEAKER', label: 'Speaker' },
-  { value: 'ORGANIZADOR', label: 'Organizador' },
   { value: 'VOLUNTARIO', label: 'Voluntario' },
 ]
 

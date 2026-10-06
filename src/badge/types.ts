@@ -3,7 +3,6 @@ export type FormatId = '4x5' | '9x16'
 export type RoleId =
   | 'PARTICIPANTE'
   | 'SPEAKER'
-  | 'ORGANIZADOR'
   | 'VOLUNTARIO'
 
 export interface PhotoTransform {

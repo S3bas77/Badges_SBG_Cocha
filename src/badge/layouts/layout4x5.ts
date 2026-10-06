@@ -41,7 +41,7 @@ export const layout4x5: LayoutDefinition = {
   ],
   awsLogoBlock: {
     x: 480,
-    y: 58,
+    y: 74,
     width: 118,
     wordmarkFontFamily: fonts.poppins,
     wordmarkFontWeight: 800,

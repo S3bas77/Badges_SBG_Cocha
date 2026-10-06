@@ -50,7 +50,7 @@ export const layout9x16: LayoutDefinition = {
   },
   awsLogoBlock: {
     x: 474,
-    y: 190,
+    y: 206,
     width: 132,
     wordmarkFontFamily: fonts.poppins,
     wordmarkFontWeight: 800,
